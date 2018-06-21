@@ -1,0 +1,24 @@
+{
+  "name": "serverless-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "handler.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "serverless-dynamodb-local": "^0.2.24",
+    "serverless-offline": "^3.25.4",
+    "uuid": "^3.2.1"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.259.1",
+    "serverless-dynamodb-client": "0.0.2",
+    "serverless-offline-sns": "^0.45.0",
+    "sentiment": "^2.1.0",
+    "date-and-time": "^0.6.2",
+    "uuid-1345": "^0.99.6"
+  }
+}
