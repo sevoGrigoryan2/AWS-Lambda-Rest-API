@@ -1,6 +1,31 @@
 const AWS = require("aws-sdk");
 const uuid = require('uuid');
 const dynamodb = require('serverless-dynamodb-client');
+const createMessage = ({MessageGroupId, MessageBody, QueueUrl}) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let messId = uuid();
+            let params = {
+                MessageGroupId,
+                MessageDeduplicationId: messId,
+                MessageBody,
+                QueueUrl
+            };
+            sqs.sendMessage(params, function (err, data) {
+                if (err) {
+                    console.log("Error", err);
+                    reject(err)
+                } else {
+                    console.log("Success", data.MessageId);
+                    resolve(data)
+                }
+            });
+        } catch (err) {
+            console.log(err);
+            reject(err);
+        }
+    });
+};
 
 
 const responseHeaders = {
@@ -31,23 +56,34 @@ module.exports =
     {
 
         saveData: (event, context, callback) => {
-            let body = JSON.parse(event.body);
-            let id = uuid.v4();
-            let params = {
-                TableName: 'TacoGallery',
-                Item: {
-                    "id": id,
-                    "firstname": body.firstname,
-                    "lastname": body.lastname
-                }
+            // let body = JSON.parse(event.body);
+            // let id = uuid.v4();
+            // let params = {
+            //     TableName: 'TacoGallery',
+            //     Item: {
+            //         "id": id,
+            //         "firstname": body.firstname,
+            //         "lastname": body.lastname
+            //     }
+            // };
+            const createSqsMessage = (dat, url) => {
+                return new Promise(async (resolve, reject) => {
+                    try {
+                        const data = JSON.parse(event.body);
+                        let sqs = await createMessage({ MessageGroupId: 'MatchingAlgorithm', MessageBody: data.note, QueueUrl: env.queue });
+                        resolve(sqs);
+                    } catch (error) {
+                        console.log('ERROR:', error);
+                        reject(error);
+                    }
+                })
             };
-
-            return dynamodb.doc.put(params).promise().then(data => {
-                data = Object.assign({id: id}, data);
-                console.log(data);
-                return callback(null, responses.success("User added"));
-
-            });
+            // return dynamodb.doc.put(params).promise().then(data => {
+            //     data = Object.assign({id: id}, data);
+            //     console.log(data);
+            //     return callback(null, responses.success("User added"));
+            //
+            // });
 
 
         },
