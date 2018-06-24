@@ -22,6 +22,8 @@ provider:
   runtime: nodejs6.10
   stage: dev
   region: us-east-1
+  environment:
+    DYNAMODB_TABLE: "aws-nodejs"
   iamRoleStatements:
       - Effect: 'Allow'
         Action:
@@ -34,6 +36,16 @@ provider:
           - 'sqs:*'
         Resource:
           - "*"
+      - Effect: 'Allow'
+        Action:
+          - dynamodb:Query
+          - dynamodb:Scan
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:DeleteItem
+        Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+
 
 # you can add statements to the Lambda function's IAM Role here
 
@@ -51,55 +63,64 @@ provider:
 #    - exclude-me-dir/**
 
 functions:
-  getDataItemById:
-    handler: handler.getDataItemById
+  create:
+    handler: api/create.create
     events:
       - http:
-          path: first-endpoint/{id}
-          method: get
-
-
-  saveData:
-    handler: handler.saveData
-    events:
-      - http:
-          path: first-endpoint
-          method: post
-
-  getAllData:
-      handler: handler.getAllData
-      events:
-        - http:
-            path: first-endpoint
-            method: get
-
-  updateItemById:
-      handler: handler.updateItemById
-      events:
-        - http:
-            path: second-endpoint
-            method: put
-
-  deleteItemById:
-        handler: handler.deleteItemById
-        events:
-          - http:
-              path: third-endpoint
-              method: delete
-
-  addNote:
-    handler: addNote.addNote
-    events:
-      - http:
-          path: notes
+          path: todos
           method: post
           cors: true
 
-  analyzeNote:
-    handler: analyzeNote.analyzeNote
+  list:
+    handler: api/list.list
     events:
-      - sns: analyzeNote
+      - http:
+          path: todos
+          method: get
+          cors: true
 
+  get:
+    handler: api/get.get
+    events:
+      - http:
+          path: todos/{id}
+          method: get
+          cors: true
+
+  update:
+    handler: api/update.update
+    events:
+      - http:
+          path: todos/{id}
+          method: put
+          cors: true
+
+  delete:
+    handler: api/delete.delete
+    events:
+      - http:
+          path: todos/{id}
+          method: delete
+          cors: true
+
+resources:
+  Resources:
+    TodosDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: id
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
@@ -135,27 +156,6 @@ functions:
 #      variable2: value2
 
 # you can add CloudFormation resource templates here
-resources:
-  Resources:
-    TacosDB:
-      Type: 'AWS::DynamoDB::Table'
-      Properties:
-        AttributeDefinitions:
-         - AttributeName: id
-           AttributeType: S
-         - AttributeName: name
-           AttributeType: S
-        KeySchema:
-          -
-            AttributeName: id
-            KeyType: HASH
-          -
-            AttributeName: name
-            KeyType: RANGE
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: TacoGallery
 #  Outputs:
 #     NewOutput:
 #       Description: "Description for the output"
